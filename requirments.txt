@@ -1,3 +1,5 @@
+pexpect==4.8.0
+ptyprocess==0.7.0
 PySide2==5.15.2
 shiboken2==5.15.2
 shotgun-api3 @ git+https://github.com/shotgunsoftware/python-api.git@af15c826d736ee9c683c400bd945707f0ca5b14f
