@@ -172,7 +172,7 @@ class Sub2DAPI(object):
 
         return self.sg.find('Asset', filters, fields, order=sort)
 
-    def get_sequences(self, proj_ent, active_only=True, extra_fields=None, extra_filters=None, sort=None):
+    def get_sequences(self, proj_ent, name=None, active_only=True, extra_fields=None, extra_filters=None, sort=None):
         '''
         pulls all the sequence data for a given Project
 
@@ -183,8 +183,10 @@ class Sub2DAPI(object):
         :param [list] extra_filters: extra filter you might want to define
         :param [dict] sort: list of dictionaries controlling sorting the results
         '''
+
         extra_fields = extra_fields or []
         extra_filters = extra_filters or []
+
         fields = ['name',
                   'code',
                   'id',
@@ -196,6 +198,10 @@ class Sub2DAPI(object):
             fields.extend(extra_fields)
 
         filters = [['project', 'is', proj_ent]]
+
+        if name:
+            filters.append(['code', 'is', name])
+
         if extra_filters:
             filters.extend(filters)
 

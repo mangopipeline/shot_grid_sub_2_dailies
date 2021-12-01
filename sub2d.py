@@ -3,13 +3,10 @@ Created on Nov 30, 2021
 
 @author: carlos.anguiano
 '''
+from shot_grid_sub_2_dailies.sub2d_api import Sub2DAPI
 import os
 
 from PySide2 import QtWidgets, QtUiTools, QtCore
-from sub2d_api import Sub2DAPI
-
-# NOTE: make you're own dialog, widget, or main window by making your own you can implement events
-# NOTE: make the rest of you're ui a widget you can append to this main class
 
 
 class UiLoaderClass(object):

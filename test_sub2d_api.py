@@ -4,9 +4,8 @@ Created on Nov 30, 2021
 @author: carlos.anguiano
 '''
 from pprint import pprint
+from shot_grid_sub_2_dailies.sub2d_api import Sub2DAPI, Shotgun
 import unittest
-
-from sub2d_api import Sub2DAPI, Shotgun
 
 
 class TestSub2DAPI(unittest.TestCase):
@@ -97,7 +96,7 @@ class TestSub2DAPI(unittest.TestCase):
 
     def test_get_shots(self):
         prjs = self._api.get_projects(name='Demo: Animation')
-        seqs = self._api.get_sequences(prjs[0], [])
+        seqs = self._api.get_sequences(prjs[0], name='bunny_070')
         shots = self._api.get_shots(seqs[0])
         self.assertTrue(len(shots) > 0)
 
