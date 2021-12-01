@@ -241,6 +241,24 @@ class Sub2DAPI(object):
 
         return self.sg.find('Shot', filters, fields, order=sort)
 
+    def get_tasks(self, shot_ent, extra_fields=None, extra_filters=None):
+        extra_fields = extra_fields or []
+        extra_filters = extra_filters or []
+
+        filters = [['entity', 'is', shot_ent]]
+
+        if extra_filters:
+            filters.extend(extra_filters)
+
+        fields = ['cached_display_name', 'name', 'code', 'id', 'entity', 'project']
+        if extra_fields:
+            fields.extend(extra_fields)
+
+        return self.sg.find('Task', filters, fields)
+
+    def upload_review_media(self, task_ent, media_path, comment, q_progress_bar=None):
+        raise NotImplementedError('upload_review_media has not been implemented')
+
 
 if __name__ == '__main__':
     print(Sub2DAPI._get_settings_file_path())

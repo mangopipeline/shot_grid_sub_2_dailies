@@ -105,6 +105,20 @@ class TestSub2DAPI(unittest.TestCase):
 
         self.assertEqual(len(val_types), len(shots))
 
+    def test_get_tasks(self):
+        prjs = self._api.get_projects(name='Demo: Animation')
+        seqs = self._api.get_sequences(prjs[0], name='bunny_070')
+        shots = self._api.get_shots(seqs[0])
+        self.assertTrue(len(shots) > 0)
+
+        tasks = self._api.get_tasks(shots[0])
+        self.assertTrue(len(tasks) > 0)
+
+        val_types = [task['cached_display_name']
+                     for task in tasks if task['type'] == 'Task']
+
+        self.assertEqual(len(val_types), len(tasks))
+
 
 if __name__ == '__main__':
     unittest.main()

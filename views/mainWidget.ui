@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>634</width>
-    <height>398</height>
+    <height>348</height>
    </rect>
   </property>
   <property name="font">
@@ -119,7 +119,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox_4"/>
+         <widget class="QComboBox" name="TaskComboBox"/>
         </item>
        </layout>
       </item>
@@ -133,10 +133,10 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QLineEdit" name="lineEdit"/>
+       <widget class="QLineEdit" name="MediaPathLineEdit"/>
       </item>
       <item>
-       <widget class="QToolButton" name="toolButton">
+       <widget class="QToolButton" name="LoadMediaBtn">
         <property name="text">
          <string>...</string>
         </property>
@@ -152,15 +152,22 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
-       <widget class="QPlainTextEdit" name="plainTextEdit"/>
+       <widget class="QPlainTextEdit" name="MediaCommentPlainTextEdit"/>
       </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="SubmitButton">
      <property name="text">
       <string>Submit To Dalies</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>0</number>
      </property>
     </widget>
    </item>
@@ -170,11 +177,11 @@
   <tabstop>PrjComboBox</tabstop>
   <tabstop>SeqComboBox</tabstop>
   <tabstop>shotComboBox</tabstop>
-  <tabstop>comboBox_4</tabstop>
-  <tabstop>lineEdit</tabstop>
-  <tabstop>toolButton</tabstop>
-  <tabstop>plainTextEdit</tabstop>
-  <tabstop>pushButton</tabstop>
+  <tabstop>TaskComboBox</tabstop>
+  <tabstop>MediaPathLineEdit</tabstop>
+  <tabstop>LoadMediaBtn</tabstop>
+  <tabstop>MediaCommentPlainTextEdit</tabstop>
+  <tabstop>SubmitButton</tabstop>
  </tabstops>
  <resources/>
  <connections/>

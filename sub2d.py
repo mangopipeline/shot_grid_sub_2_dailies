@@ -3,8 +3,8 @@ Created on Nov 30, 2021
 
 @author: carlos.anguiano
 '''
-from shot_grid_sub_2_dailies.sub2d_api import Sub2DAPI
 import os
+from shot_grid_sub_2_dailies.sub2d_api import Sub2DAPI
 
 from PySide2 import QtWidgets, QtUiTools, QtCore
 
@@ -88,10 +88,15 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
         self._tasks = []
 
         self._populate_projects()
+
         self._connect_signals()
 
     def _connect_signals(self):
-        pass
+        self._mwidget.PrjComboBox.currentIndexChanged.connect(lambda _: self._populate_sequences())
+        self._mwidget.SeqComboBox.currentIndexChanged.connect(lambda _: self._popluate_shots())
+        self._mwidget.shotComboBox.currentIndexChanged.connect(lambda _: self._populate_tasks())
+        self._mwidget.LoadMediaBtn.clicked.connect(self._load_media)
+        self._mwidget.SubmitButton.clicked.connect(self._submit_media)
 
     def _collect_creds(self):
         collect_creds = CredDialog(self._api, parent=self)
@@ -100,10 +105,11 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
 
     def _populate_projects(self):
         self._projects = self._api.get_projects()
-        self._mwidget.PrjComboBox.addItems(
-            [prj['name'] for prj in self._projects])
+        self._mwidget.PrjComboBox.addItems([prj['name'] for prj in self._projects])
 
+        self.blockSignals(True)
         self._populate_sequences()
+        self.blockSignals(False)
 
     def _populate_sequences(self):
         self._sequences = []
@@ -116,20 +122,73 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
         prj = self._projects[self._mwidget.PrjComboBox.currentIndex()]
         self._sequences = self._api.get_sequences(prj)
 
-        self._mwidget.SeqComboBox.addItems(
-            [seq['code'] for seq in self._sequences])
+        self._mwidget.SeqComboBox.addItems([seq['code'] for seq in self._sequences])
+
+        self.blockSignals(True)
         self._popluate_shots()
+        self.blockSignals(False)
 
     def _popluate_shots(self):
         self._shots = []
+        self._mwidget.shotComboBox.clear()
 
         if not self._sequences:
+            self._populate_tasks()
             return
 
         seq = self._sequences[self._mwidget.SeqComboBox.currentIndex()]
         self._shots = self._api.get_shots(seq)
-        self._mwidget.shotComboBox.addItems(
-            [shot['code'] for shot in self._shots])
+        self._mwidget.shotComboBox.addItems([shot['code'] for shot in self._shots])
+
+        self.blockSignals(True)
+        self._populate_tasks()
+        self.blockSignals(False)
+
+    def _populate_tasks(self):
+        self._tasks = []
+        self._mwidget.TaskComboBox.clear()
+
+        if not self._shots:
+            return
+
+        shot = self._shots[self._mwidget.TaskComboBox.currentIndex()]
+        self._tasks = self._api.get_tasks(shot)
+        self._mwidget.TaskComboBox.addItems([task['cached_display_name'] for task in self._tasks])
+
+    def _load_media(self):
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                             "Open Media",
+                                                             "/home/jana",
+                                                             "Image Files (*.exr *.jpg  *.mp4 *.mov)")
+        if not file_name:
+            return
+
+        self._mwidget.MediaPathLineEdit.setText(file_name)
+
+    def _submit_media(self):
+        task = None
+
+        if self._tasks:
+            task = self._tasks[self._mwidget.TaskComboBox.currentIndex()]
+
+        if not task:
+            QtWidgets.QMessageBox.about(self, 'Sub2Dailies', 'Please Select A Valid Task For Your Media')
+            return
+
+        media_path = self._mwidget.MediaPathLineEdit.text()
+        if not os.path.isfile(media_path):
+            QtWidgets.QMessageBox.about(self, 'Sub2Dailies', 'Please select media for upload')
+            return
+
+        comment = self._mwidget.MediaCommentPlainTextEdit.toPlainText()
+        if not comment:
+            QtWidgets.QMessageBox.about(self, 'Sub2Dailies', 'Please add a comment to your media')
+            return
+
+        self._api.upload_review_media(task,
+                                      media_path,
+                                      comment,
+                                      q_progress_bar=self._mwidget.progressBar)
 
 
 if __name__ == '__main__':
