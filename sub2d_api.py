@@ -5,12 +5,20 @@ Created on Nov 30, 2021
 '''
 import json
 import os
+from shot_grid_sub_2_dailies.ffmpeg_helper import FFMpegHelper
+from tempfile import gettempdir
+
 from shotgun_api3 import Shotgun
-from shotgun_api3.shotgun import AuthenticationFault
+from shotgun_api3.shotgun import AuthenticationFault, ShotgunError
 
 
 class Sub2DAPI(object):
     _sg_api = None
+    media_formats = {'.jpg': 'image',
+                     '.exr': 'image'}
+
+    def __init__(self):
+        self._ffmpeg = FFMpegHelper()
 
     @property
     def sg(self):
@@ -213,7 +221,7 @@ class Sub2DAPI(object):
 
         return self.sg.find('Sequence', filters, fields, order=sort)
 
-    def get_shots(self, seq_ent, active_only=True, extra_fields=None, extra_filters=None, sort=None):
+    def get_shots(self, seq_ent, name=None, active_only=True, extra_fields=None, extra_filters=None, sort=None):
         '''
 
         :param dict seq_ent:
@@ -226,6 +234,10 @@ class Sub2DAPI(object):
         extra_filters = extra_filters or []
 
         filters = [['sg_sequence', 'is', seq_ent]]
+
+        if name:
+            filters.append(['code', 'is', name])
+
         if extra_filters:
             filters.extend(extra_filters)
 
@@ -242,6 +254,12 @@ class Sub2DAPI(object):
         return self.sg.find('Shot', filters, fields, order=sort)
 
     def get_tasks(self, shot_ent, extra_fields=None, extra_filters=None):
+        """
+
+        :param dict shot_ent:
+        :param [str] extra_fields:
+        :param [list] extra_filters:
+        """
         extra_fields = extra_fields or []
         extra_filters = extra_filters or []
 
@@ -256,8 +274,107 @@ class Sub2DAPI(object):
 
         return self.sg.find('Task', filters, fields)
 
-    def upload_review_media(self, task_ent, media_path, comment, q_progress_bar=None):
-        raise NotImplementedError('upload_review_media has not been implemented')
+    def get_task_version(self, task_ent, extra_fields=None, extra_filters=None):
+        """
+
+        :param dict task_ent:
+        """
+        extra_fields = extra_fields or []
+        extra_filters = extra_filters or []
+
+        fields = ['code']
+
+        if extra_fields:
+            fields.extend(extra_fields)
+
+        filters = [['sg_task', 'is', task_ent]]
+        if extra_filters:
+            filters.extend(extra_filters)
+
+        return self.sg.find('Version', filters, fields)
+
+    def gen_unique_version_name(self, task_ent, ver_name):
+        current_ver = 0
+        ver_name = ver_name + '_v'
+        versions = self.get_task_version(task_ent, extra_filters=[['code', 'starts_with', ver_name]])
+        versions_int = [self._ffmpeg.extract_padding(ver['code']) for ver in versions if self._ffmpeg.extract_padding(ver['code'])]
+        if versions_int:
+            versions_int.sort(reverse=True)
+
+            if current_ver < versions_int[0]:
+                current_ver = versions_int[0]
+
+        final_version = str(current_ver + 1)
+
+        if len(final_version) < 4:
+            final_version = final_version.zfill(4)
+
+        return '%s%s' % (ver_name, final_version)
+
+    def make_version_for_task(self, task_ent, ver_name, comment):
+        if not 'type' in task_ent and task_ent['type'] != 'Task':
+            raise ValueError('task_ent must be of type "Task"')
+
+        fields = ['project', 'entity', 'sg_task', 'code', 'description', 'code', 'sg_path_to_frames']
+
+        # NOTE: append version number to the media name
+        ver_name = self.gen_unique_version_name(task_ent,
+                                                ver_name)
+        data = {
+            'project': task_ent['project'],
+            'code': ver_name,
+            'description': comment,
+            'sg_task': task_ent,
+            'entity': task_ent['entity']
+        }
+
+        return self.sg.create('Version', data, fields)
+
+    def upload_review_media(self, task_ent, media_path, comment, qt_pg=None):
+        """
+
+        :param dict task_ent:
+        :param str media_path:
+        :param str comment:
+        :param QtWidgets.QProgressBar qt_pg:
+        """
+        # NOTE: small validation
+        _, ext = os.path.splitext(media_path.lower())
+
+        if not ext in self.media_formats:
+            raise ValueError('%s is not a supported file format' % ext)
+
+        if self.media_formats[ext] != 'image':
+            raise NotImplementedError('only images are supported at the moment')
+
+        # NOTE: gen render path
+        temp_media_path = os.path.join(gettempdir(), 'temp_sg_upload_media.mov')
+        if os.path.isfile(temp_media_path):
+            os.unlink(temp_media_path)
+
+        self._ffmpeg.image_list_to_mov(media_path,
+                                       temp_media_path,
+                                       qt_pg=qt_pg)
+
+        if not os.path.isfile(temp_media_path):
+            raise RuntimeError('Failed to generate temporary media %s' % temp_media_path)
+
+        # NOTE: now that our media is ready let's upload this sucker!!!
+
+        sg_version = self.make_version_for_task(task_ent,
+                                                'Zenimax_SG_Sub_Dailies',  # NOTE: you can come up with cooler way to name your media
+                                                comment)
+
+        try:
+            # NOTE: uploading some stuff baby boy!!!
+            self.sg.upload('Version',
+                           sg_version['id'],
+                           temp_media_path,
+                           'sg_uploaded_movie',
+                           os.path.basename(temp_media_path))
+        except ShotgunError as msg:
+            self.sg.delete('Version', sg_version['id'])
+            raise msg
 
 
 if __name__ == '__main__':

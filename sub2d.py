@@ -156,10 +156,11 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
         self._mwidget.TaskComboBox.addItems([task['cached_display_name'] for task in self._tasks])
 
     def _load_media(self):
+        media_types = ['*%s' % key for key in Sub2DAPI.media_formats.keys()]
         file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self,
                                                              "Open Media",
                                                              "/home/jana",
-                                                             "Image Files (*.exr *.jpg  *.mp4 *.mov)")
+                                                             "Image Files (%s)" % ' '.join(media_types))
         if not file_name:
             return
 
@@ -188,7 +189,11 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
         self._api.upload_review_media(task,
                                       media_path,
                                       comment,
-                                      q_progress_bar=self._mwidget.progressBar)
+                                      qt_pg=self._mwidget.progressBar)
+        QtWidgets.QMessageBox.about(self,
+                                    'Sub2D',
+                                    'Your media has been sucessfully submitted for review!')
+        self.close()
 
 
 if __name__ == '__main__':

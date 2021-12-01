@@ -1,5 +1,6 @@
 '''
 '''
+from glob import glob
 from logging import getLogger
 import os
 import re
@@ -78,7 +79,14 @@ class FFMpegHelper(object):
             val = int(thread.match.group(0).replace('frame=', ''))
             qt_pg.setValue(val)
 
-    def mov_to_mov(self, in_file, output, scale=False, frame_rate=23.98, lut_3d=None, qt_pg=None, codec=None):
+    def mov_to_mov(self,
+                   in_file,
+                   output,
+                   scale=False,
+                   frame_rate=23.98,
+                   lut_3d=None,
+                   qt_pg=None,
+                   codec=None):
         """
         Encode incoming movies to a standard output format
 
@@ -138,14 +146,38 @@ class FFMpegHelper(object):
 
         return self._launch_and_track(cmd, cwd, qt_pg=qt_pg)
 
+    def gen_image_sequence_data_from_file(self, input_image):
+        root, base = os.path.split(input_image)
+        fname, ext = os.path.splitext(base)
+
+        padding = self.extract_padding(fname, as_string=True)
+        if not padding:
+            raise ValueError('%s is not part of an input_image sequence (no padding)' % input_image)
+        subname = fname[:-len(padding)]
+        search = os.path.join(root, subname + '*' + ext)
+
+        images = glob(search)
+        pre_regex = os.path.join(root, subname).lower()
+        pre_regex = pre_regex.replace('\\', '\\\\')
+        confirm_regex = r'(%s)(\d+)(%s)$' % (pre_regex, ext.lower())
+        cregex = re.compile(confirm_regex, flags=re.IGNORECASE)
+
+        images = [img for img in images if cregex.match(img)]
+        images.sort(key=lambda x: x.lower())
+
+        if not images:
+            raise ValueError('Could not determine input_image list from path %s' % input_image)
+
+        return self.extract_padding(images[0][:-len(ext)], as_string=True), len(images), images[0], ext
+
     def image_list_to_mov(self,
-                          first_img,
+                          input_image,
                           output,
                           scale=False,
                           frame_rate=23.98,
                           lut_3d=None,
                           qt_pg=None,
-                          codec='mjpeg'):
+                          codec=None):
         '''
         this method is for encodeing image sequences into movies
 
@@ -169,13 +201,21 @@ class FFMpegHelper(object):
         >>> ffmpg.image_list_to_mov(image_seq[0], movfile) #ecode image sequence to .mov
 
         '''
-        base_name = os.path.basename(first_img)
-        ext = '.' + base_name.split('.')[-1]
+        codec = codec or 'h264'
 
-        start_frame = self.extract_padding(base_name[:-len(ext)], as_string=True)
-        input_img = os.path.join(os.path.dirname(first_img), base_name.replace(start_frame + ext, '%04d' + ext))
+        start_frame, img_count, first_img, ext = self.gen_image_sequence_data_from_file(input_image)
+
+        # NOTE: set progress bar to match number of frames
+        if qt_pg:
+            qt_pg.setValue(0)
+            qt_pg.setMaximum(img_count)
+
+        img_root, base_name = os.path.split(first_img)
+
+        input_img = os.path.join(img_root, base_name.replace(start_frame + ext, '%04d' + ext))
 
         out_root = os.path.dirname(output)
+
         if not os.path.isdir(out_root):
             os.makedirs(out_root)
 
