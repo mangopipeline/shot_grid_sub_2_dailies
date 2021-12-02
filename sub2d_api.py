@@ -362,7 +362,7 @@ class Sub2DAPI(object):
         # NOTE: now that our media is ready let's upload this sucker!!!
 
         sg_version = self.make_version_for_task(task_ent,
-                                                'Zenimax_SG_Sub_Dailies',  # NOTE: you can come up with cooler way to name your media
+                                                "%s_%s_%s" % (task_ent['entity']['name'], task_ent['cached_display_name'], 'Sub2D'),  # NOTE: you can come up with cooler way to name your media
                                                 comment)
 
         try:

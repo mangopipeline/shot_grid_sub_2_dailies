@@ -151,7 +151,7 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
         if not self._shots:
             return
 
-        shot = self._shots[self._mwidget.TaskComboBox.currentIndex()]
+        shot = self._shots[self._mwidget.shotComboBox.currentIndex()]
         self._tasks = self._api.get_tasks(shot)
         self._mwidget.TaskComboBox.addItems([task['cached_display_name'] for task in self._tasks])
 
@@ -192,7 +192,7 @@ class MyApp(QtWidgets.QDialog, UiLoaderClass):
                                       qt_pg=self._mwidget.progressBar)
         QtWidgets.QMessageBox.about(self,
                                     'Sub2D',
-                                    'Your media has been sucessfully submitted for review!')
+                                    'Your media has been successfully submitted for review!')
         self.close()
 
 

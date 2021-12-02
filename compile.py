@@ -60,8 +60,8 @@ if __name__ == '__main__':
 
     _BUILDER = BuildHelper('sub2d.py',
 
-                           one_file=False,
-                           no_console=False,
+                           one_file=True,
+                           no_console=True,
                            dependencies=_EXTRA_DATA)
 
     _BUILDER.build_exe()
