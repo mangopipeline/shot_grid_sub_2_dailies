@@ -48,8 +48,8 @@ class Sub2DAPI(object):
 
         try:
             prjs = sg.find('Project', [])
-        except AuthenticationFault:
-            raise RuntimeError('Could not log in with the given creds')
+        except AuthenticationFault as msg:
+            raise RuntimeError('Could not log in with the given creds\n%s' % str(msg))
 
         return sg
 
